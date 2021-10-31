@@ -1,6 +1,8 @@
 const chat = document.getElementById("chat");
 const msgs = document.getElementById("msgs");
 
+// Note can use requestAnimationFrame
+
 // let's store all current messages here
 let allChat = [];
 
@@ -15,13 +17,46 @@ chat.addEventListener("submit", function (e) {
 });
 
 async function postNewMsg(user, text) {
-  // post to /poll a new message
-  // write code here
+  const data = {
+    user,
+    text,
+  };
+
+  const options = {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  };
+  try {
+    allChat.unshift({
+      ...data
+    });
+    render();
+    const res = await fetch('/poll', options);
+    const json = await res.json();
+    console.log('Posted', json);
+  } catch (error) {
+    console.log('Error making a post', error);
+  }
+
+
 }
 
 async function getNewMsgs() {
-  // poll the server
-  // write code here
+  let json;
+  try {
+    const res = await fetch('/poll');
+    json = await res.json();
+  } catch(error) {
+    // Backoff code
+    console.error('Polling Error', error);
+  }
+
+  allChat = json.msg;
+  render();
+  setTimeout(getNewMsgs, INTERVAL);
 }
 
 function render() {
