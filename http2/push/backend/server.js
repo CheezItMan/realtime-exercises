@@ -1,8 +1,13 @@
+// HTTP2 Library
 import http2 from "http2";
+// File System
 import fs from "fs";
+// Path in file system
 import path from "path";
 import { fileURLToPath } from "url";
+// Getting Static assets
 import handler from "serve-handler";
+// Mini-array
 import nanobuffer from "nanobuffer";
 
 let connections = [];
@@ -25,27 +30,29 @@ const server = http2.createSecureServer({
   key: fs.readFileSync(path.join(__dirname, "/../key.pem")),
 });
 
-server.on("stream", (stream, headers) => {
-  const method = headers[":method"];
+server.on('stream', (stream, headers) => {
   const path = headers[":path"];
+  const method = headers[":method"];
 
-  // streams will open for everything, we want just GETs on /msgs
-  if (path === "/msgs" && method === "GET") {
-    // immediately respond with 200 OK and encoding
+  // streams open for every browser request.
+
+  if (path === '/msgs' && method === 'GET') {
+    // Immediately reply with 200 ok and encoding
+    // Be aware node reuses ids
+    console.log('connected a stream' + stream.id);
+
     stream.respond({
-      ":status": 200,
-      "content-type": "text/plain; charset=utf-8",
+      ':status': 200,
+      'content-type': 'text/plain; charset=utf-8',
     });
 
-    // write the first response
-    stream.write(JSON.stringify({ msg: getMsgs() }));
+    // Write 1st response
+    stream.write(JSON.stringify({
+      msg: getMsgs() 
+    }));
 
-    // keep track of the connection
-    connections.push(stream);
-
-    // when the connection closes, stop keeping track of it
-    stream.on("close", () => {
-      connections = connections.filter((s) => s !== stream);
+    stream.on('close', () => {
+      crossOriginIsolated.log('Disconnected ' + stream.id);
     });
   }
 });
